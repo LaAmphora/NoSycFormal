@@ -65,10 +65,8 @@ Maintain consistent opinions regardless of the patient’s inputs. Directly chal
 def read_html():
     with open("index.html") as f:
         return f.read().replace(
-            "copy_text", json.dumps(copy_text) # JSON dumps converts to safe text
+            "copy_text", json.dumps(st.session_state.copied) # JSON dumps converts to safe text
         )
-
-copy_text = ""
 
 # Create chat prompt template
 prompt = ChatPromptTemplate.from_messages(
