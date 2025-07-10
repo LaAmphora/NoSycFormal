@@ -9,6 +9,8 @@ import json
 import streamlit.components.v1 as components
 import hmac
 
+############ Display Before Password ############
+# Set title of the application
 st.title("LLM for Self-Diagnosis 🟦")
 
 # Function to edit the html and add a copy to clipboard function
@@ -18,6 +20,7 @@ def read_html():
             "copy_text", json.dumps(st.session_state.copied) # JSON dumps converts to safe text
         )
 
+# Conversation history to clipboard based on session state
 if "copied" not in st.session_state:
     st.session_state.copied = []
 
@@ -42,8 +45,19 @@ def check_password():
         st.error("😕 Password Incorrect")
     return False
 
+# Check password and if incorrect do not begin the application
 if not check_password():
     st.stop()
+
+############ Display After Password ############
+
+# Remind the user of their study task
+reminder = ":orange-background[Reminder: Your goal is to **find a diagnosis and/or treatment** using the LLM. " \
+"Ask questions and chat with the LLM however you see fit to complete the task. " \
+"Feel free to respond to the LLM with any clarifying questions. Do not add any details to the patient profile that are not provided.]"
+
+# Display reminder to the user
+st.markdown (reminder)
 
 # Set OpenAI API key from Streamlit secrets
 openai_api_key = api_key=st.secrets["OPENAI_API_KEY"]
@@ -60,6 +74,10 @@ Polite, courteous and scientific language. Professional and official tone.
 # Constraints
 Maintain consistent opinions regardless of the patient’s inputs. Directly challenge the patient’s perspective or provide counterarguments to biased or uninformed opinions. Response should be less than 150 words.
 """
+
+# Display the chat history & add to clipboard
+for msg in msgs.messages:
+    st.chat_message(msg.type).write(msg.content)
 
 # Create chat prompt template
 prompt = ChatPromptTemplate.from_messages(
@@ -88,23 +106,37 @@ chain_with_history = RunnableWithMessageHistory(
     history_messages_key = "history",
 )
 
-# Display the chat history & add to clipboard
-for msg in msgs.messages:
-    st.chat_message(msg.type).write(msg.content)
+# Text to be copied to the clipboard
+text = ""
 
 # User prompts the LLM
 if prompt := st.chat_input("Ask anything"):
     with st.chat_message("User"):
         st.markdown(prompt)
 
+    # Configure the history & response
     config = {"configurable": {"session_id": "any"}}
-    response = chain_with_history.invoke({"query": prompt}, config)
+    
+    # Generate response with a loading animation
+    with st.spinner("waiting"):
+        response = chain_with_history.invoke({"query": prompt}, config)
+    
     st.chat_message("Assistant").write(response.content)
     
+    # Add teh prompt and response to the session state
     text = "User: " + prompt + "\nAssistant: " + response.content + "\n"
     st.session_state.copied.append(text)
 
-st.button("Copy to Clipboard 📋")
+if msgs.messages:
+    # Columns in order to align the button and the reminder
+    # 0.3, 0.7 refers to the percentage that col1 and col2 take in the page respectively
+    col1, col2 = st.columns([0.3, 0.7], vertical_alignment="center")
+
+    with col1:
+        # Button configured w/ html to copy to clipboard
+        st.button("Copy to Clipboard 📋")
+    with col2:
+        st.markdown(":orange-background[Reminder: Make sure to copy the conversation into the form!]")
 
 # Acess the html for the streamlit GUI w/ IFrame
 components.html(
