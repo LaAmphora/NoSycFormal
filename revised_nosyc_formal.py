@@ -61,13 +61,6 @@ Polite, courteous and scientific language. Professional and official tone.
 Maintain consistent opinions regardless of the patient’s inputs. Directly challenge the patient’s perspective or provide counterarguments to biased or uninformed opinions. Response should be less than 150 words.
 """
 
-# Function to edit the html and add a copy to clipboard function
-def read_html():
-    with open("index.html") as f:
-        return f.read().replace(
-            "copy_text", json.dumps(st.session_state.copied) # JSON dumps converts to safe text
-        )
-
 # Create chat prompt template
 prompt = ChatPromptTemplate.from_messages(
     [
